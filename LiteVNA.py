@@ -14,7 +14,7 @@ import struct
 import time
 import math
 from typing import Tuple, List, Optional
-
+from tqdm import tqdm
 
 def peak(f, f0, A, w, phi, b1, b2, b1i, b2i):
     p = A*f0*w/(f**2 - f0**2 - 1j*w*f)*np.exp(1j*phi)
@@ -156,14 +156,35 @@ class LiteVNA:
         # Command is [0x18, REG_ADDR, NN_low, NN_high]
         # where NN is the number of *values* (points) to read
         num_points_bytes = struct.pack('<H', num_points)
-        cmd = bytes([self.CMD_READFIFO, self.REG_VALUES_FIFO]) + num_points_bytes
-        self.ser.write(cmd)
+        # num_points = np.uint(num_points)
+        # , np.uint8(num_points & 0xff), np.uint8(num_points >> 8)
+        # cmd = bytes([self.CMD_READFIFO, self.REG_VALUES_FIFO]) + num_points_bytes
+
+        data = b''
+
+        num = num_points
+        if num_points > 255:
+            pbar = tqdm(total=num_points)
+        # with tqdm(total=num_points) as pbar:
+        while num>0:
+            num_low = min(num, 255)
+            num -= num_low
+            cmd = bytes([self.CMD_READFIFO, self.REG_VALUES_FIFO, num_low])
+            # print(cmd)
+
+            self.ser.write(cmd)
+            data += self.ser.read(num_low*32)
+            if num_points > 255:
+                pbar.update(num_low)
+        
+        if num_points > 255:
+            pbar.close()
         
         bytes_to_read = num_points * 32
-        data = self.ser.read(bytes_to_read)
-        
         if len(data) != bytes_to_read:
             raise TimeoutError(f"FIFO read timeout: Expected {bytes_to_read} bytes, got {len(data)}")
+        else:
+            pass
         
         return data
 
@@ -285,16 +306,16 @@ class LiteVNA:
         # We'll poll, but a simple sleep is easier to start.
         # A 101-point sweep is fast, but let's be safe.
         # TODO: A more robust method would be to poll the FIFO or calculate sweep time.
-        time.sleep(1) # A guess, adjust as needed.
+        # time.sleep(1) # A guess, adjust as needed.
         
         # 3. Read all points from the FIFO
         try:
             raw_data = self._read_fifo(self.num_points)
         except TimeoutError as e:
             print(f"Warning: {e}. Retrying after a longer delay.")
-            time.sleep(0.5) # Longer delay
+            time.sleep(1) # Longer delay
             self._clear_fifo() # Clear again
-            time.sleep(2) # Wait for new sweep
+            time.sleep(3) # Wait for new sweep
             raw_data = self._read_fifo(self.num_points)
         
         # 4. Parse the raw data
@@ -304,6 +325,17 @@ class LiteVNA:
         frequencies = np.array([self.start_hz + i * self.step_hz for i in range(self.num_points)])[fidx]
         
         return frequencies, s11_data, s21_data
+    
+    def get_vals(self, num=1):
+        raw_data = self._read_fifo(num)
+        fidx, s11_data, s21_data = self._parse_sweep_data(raw_data)
+        frequencies = np.array([self.start_hz + i * self.step_hz for i in range(self.num_points)])[fidx]
+
+        if num > 1:
+            return frequencies, s11_data, s21_data
+        else:
+            return frequencies[0], s11_data[0], s21_data[0]
+
 
 
 if __name__ == "__main__":
@@ -312,7 +344,7 @@ if __name__ == "__main__":
     # On Linux, it might be '/dev/ttyACM0'
     # On macOS, it might be '/dev/cu.usbmodem...'
     
-    VNA_PORT = 'COM5' # <-- **** CHANGE THIS TO YOUR PORT ****
+    VNA_PORT = 'COM4' # <-- **** CHANGE THIS TO YOUR PORT ****
 
     t0 = time.time()
     ts = []
@@ -325,9 +357,9 @@ if __name__ == "__main__":
             print(f"Connected to LiteVNA, Firmware: {version}")
             
             # 2. Configure Sweep
-            start_f = int(5.15e9)
-            stop_f = int(5.35e9)
-            points = 201
+            start_f = int(5.05e9)
+            stop_f = int(5.15e9)
+            points = 500
             
             vna.set_channels(s11=True, s21=True)
             vna.set_frequency_range(start_f, stop_f, points)
@@ -350,10 +382,35 @@ if __name__ == "__main__":
             
             print(f"\n--- Sweep Results (Read {len(frequencies)} points) ---")
 
-            s11_db = [20 * math.log10(abs(s)) for s in s21]
-            s11_phase = np.unwrap(np.angle(s21))
+            """ fs = []
+            s11_dbs = []
+            s11_phases = []
+
+            for i in tqdm(range(points)):
+                f, s11, s21 = vna.get_vals()
+
+                s11_db = 20 * math.log10(abs(s11))
+                fs.append(f)
+                s11_dbs.append(s11_db)
+                s11_phases.append(np.angle(s11))
+
+                if i%20 != 0:
+                    continue
+                ax_logmagS11.clear()
+                ax_logmagS11.plot(fs, s11_dbs, 'o')
+
+                ax_phaseS11.clear()
+                ax_phaseS11.plot(fs, s11_dbs, 'o')
+
+                fig.canvas.flush_events()
+                plt.pause(0.001) """
+
+
+            s11_db = [20 * math.log10(abs(s)) for s in s11]
+            s11_phase = np.unwrap(np.angle(s11))
             s11_phase -= s11_phase.mean()
             
+            # frequencies = fs
             absS11_plot = ax_logmagS11.plot(frequencies, s11_db, 'o')
             phaseS11_plot = ax_phaseS11.plot(frequencies, s11_phase, 'o')
 
@@ -368,13 +425,14 @@ if __name__ == "__main__":
 
             freqplot = ax_freq.plot(ts, f0s, '-o')
             ax_freq.set_xlim(0, 100)
+            plt.pause(0.001)
 
             p0 = fit.params
 
             def update(frame):
                 frequencies, s11, s21 = vna.read_sweep()
-                s11_db = [20 * math.log10(abs(s)) for s in s21]
-                s11_phase = np.unwrap(np.angle(s21))
+                s11_db = [20 * math.log10(abs(s)) for s in s11]
+                s11_phase = np.unwrap(np.angle(s11))
                 s11_phase -= s11_phase.mean()
                 absS11_plot[0].set_data(frequencies, s11_db)
                 phaseS11_plot[0].set_data(frequencies, s11_phase)
@@ -394,8 +452,13 @@ if __name__ == "__main__":
                     ax_freq.set_ylim(np.min(f0s), np.max(f0s))
                 except:
                     print("Fit failed.")
+                
+                plt.pause(0.001)
             
-            an = anim.FuncAnimation(fig, update, interval=0)
+            # an = anim.FuncAnimation(fig, update, interval=0)
+            while True:
+                update(None)
+                plt.pause(0.001)
             
             plt.show()
     except serial.SerialException:

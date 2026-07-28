@@ -233,7 +233,7 @@ class ziLockin():
             
             if verbose:
                 prog = sweeper.progress()
-                print("Sweeper progress: {:.0f}\%".format(100*prog[0]), end='\r')
+                print("Sweeper progress: {:.0f}%".format(100*prog[0]), end='\r')
             
             now = time.time()
             if now - start > timeout:
@@ -311,7 +311,7 @@ class ziLockin():
                 
                 if verbose:
                     prog = sweeper.progress()
-                    print("Sweeper progress: {:.0f}\%".format(100*prog[0]), end='\r')
+                    print("Sweeper progress: {:.0f}%".format(100*prog[0]), end='\r')
                 
                 now = time.time()
                 if now - start > timeout:
@@ -333,7 +333,7 @@ class ziLockin():
                 
                 if verbose:
                     prog = sweeper.progress()
-                    print("Sweeper progress: {:.0f}\%".format(100*prog[0]), end='\r')
+                    print("Sweeper progress: {:.0f}%".format(100*prog[0]), end='\r')
                 
                 now = time.time()
                 if now - start > timeout:

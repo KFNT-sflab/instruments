@@ -6,10 +6,6 @@ Created on Thu Mar 23 11:14:53 2023
 @author: filip
 """
 
-import pyvisa as visa 
-import numpy as np
-from time import sleep
-
 from .Instrument import Instrument
 
 class Keithley2200(Instrument):

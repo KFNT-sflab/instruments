@@ -58,15 +58,15 @@ class ziLockin():
     def configure_input(self, input_id, input_range, ac_coupling=True, imp50 = False,
                         differential=False):
         input_settings = [
-                ['/%s/sigins/%d/range' % (self.device, input_id), input_range],
-                ['/%s/sigins/%d/ac'    % (self.device, input_id), 1 if ac_coupling else 0],
-                ['/%s/sigins/%d/imp50' % (self.device, input_id), 1 if imp50 else 0],
-                ['/%s/sigins/%d/diff'  % (self.device, input_id), 1 if differential else 0]]
+                [f'/{self.device}/sigins/{input_id}/range', input_range],
+                [f'/{self.device}/sigins/{input_id}/ac',    1 if ac_coupling else 0],
+                [f'/{self.device}/sigins/{input_id}/imp50', 1 if imp50 else 0],
+                [f'/{self.device}/sigins/{input_id}/diff',  1 if differential else 0]]
         self.daq.set(input_settings);
     
     def configure_oscillator(self, osc_id, freq):
         osc_settings = [
-                ['/{}/oscs/{}/freq'.format(self.device, osc_id), freq]]
+                [f'/{self.device}/oscs/{osc_id}/freq', freq]]
         self.daq.set(osc_settings)
         self.daq.sync()
         
@@ -94,14 +94,14 @@ class ziLockin():
         **sinc** : Enable the Sinc filter
         """
         demod_settings = [
-                ['/%s/demods/%d/enable'         % (self.device, demod_id), 1],
-                ['/%s/demods/%d/rate'           % (self.device, demod_id), rate],
-                ['/%s/demods/%d/adcselect'      % (self.device, demod_id), input_channel],
-                ['/%s/demods/%d/order'          % (self.device, demod_id), filter_order],
-                ['/%s/demods/%d/timeconstant'   % (self.device, demod_id), tc],
-                ['/%s/demods/%d/oscselect'      % (self.device, demod_id), osc],
-                ['/%s/demods/%d/harmonic'       % (self.device, demod_id), harm],
-                ['/%s/demods/%d/sinc'           % (self.device, demod_id), 1 if sinc else 0]]
+                [f'/{self.device}/demods/{demod_id}/enable', 1],
+                [f'/{self.device}/demods/{demod_id}/rate',   rate],
+                [f'/{self.device}/demods/{demod_id}/adcselect', input_channel],
+                [f'/{self.device}/demods/{demod_id}/order',  filter_order],
+                [f'/{self.device}/demods/{demod_id}/timeconstant', tc],
+                [f'/{self.device}/demods/{demod_id}/oscselect', osc],
+                [f'/{self.device}/demods/{demod_id}/harmonic', harm],
+                [f'/{self.device}/demods/{demod_id}/sinc',   1 if sinc else 0]]
         self.daq.set(demod_settings)
         if sync:
             self.daq.sync()
@@ -119,30 +119,28 @@ class ziLockin():
         **osc** : Oscillator to use for this demodulator.
         """
         demod_settings = [
-                ['/%s/plls/%d/adcselect'      % (self.device, pll_id), input_channel]]
+                [f'/{self.device}/plls/{pll_id}/adcselect', input_channel]]
         self.daq.set(demod_settings)
         if sync:
             self.daq.sync()
     
     def configure_output(self, output_id, demod_id, amplitude, enable=True):
-        range_path = '/{}/sigouts/{}/range'.format(self.device, output_id)
+        range_path = f'/{self.device}/sigouts/{output_id}/range'
         rng = self.daq.get(range_path, flat=True)[range_path][0]
         output_settings = [
-                ['/%s/sigouts/%d/enables/%d'     % (self.device, output_id, demod_id), 1 if enable else 0],
-                ['/%s/sigouts/%d/amplitudes/%d' % (self.device, output_id, demod_id), amplitude/rng]]
-        # print(output_settings)
+                [f'/{self.device}/sigouts/{output_id}/enables/{demod_id}', 1 if enable else 0],
+                [f'/{self.device}/sigouts/{output_id}/amplitudes/{demod_id}', amplitude/rng]]
         self.daq.set(output_settings)
         self.daq.sync()
     
     def output(self, output_id, output_on=None, output_range=None, offset=None):
         output_settings = []
         if output_on is not None:
-            output_settings.append(['/%s/sigouts/%d/on'  % (self.device, output_id), 1 if output_on else 0])
+            output_settings.append([f'/{self.device}/sigouts/{output_id}/on', 1 if output_on else 0])
         if offset is not None:
-            output_settings.append(['/%s/sigouts/%d/offset' % (self.device, output_id), offset])
+            output_settings.append([f'/{self.device}/sigouts/{output_id}/offset', offset])
         if output_range is not None:
-            output_settings.append(['/%s/sigouts/%d/range'  % (self.device, output_id), output_range])
-        #print(output_settings)
+            output_settings.append([f'/{self.device}/sigouts/{output_id}/range', output_range])
         self.daq.set(output_settings)
         self.daq.sync()
         
@@ -179,9 +177,8 @@ class ziLockin():
             sweeper.set('sweep/sincfilter', 0)
             
         #subscribe to demodulators
-        paths = ['/{}/demods/{}/sample'.format(self.device, demod) for demod in demods]
+        paths = [f'/{self.device}/demods/{demod}/sample' for demod in demods]
         for path in paths:
-           # print("Sweeper:subscribing to " + path)
             sweeper.subscribe(path)
         self.sweeper_subscribed_paths = paths
         
@@ -209,7 +206,7 @@ class ziLockin():
                                          scan, sinc_filter)
         
         #configure the sweep
-        sweeper.set('sweep/gridnode', 'oscs/{}/freq'.format(osc))
+        sweeper.set('sweep/gridnode', f'oscs/{osc}/freq')
         sweeper.set('sweep/start', fi)
         sweeper.set('sweep/stop', ff)
         sweeper.set('sweep/samplecount', samples)
@@ -233,7 +230,7 @@ class ziLockin():
             
             if verbose:
                 prog = sweeper.progress()
-                print("Sweeper progress: {:.0f}%".format(100*prog[0]), end='\r')
+                print(f"Sweeper progress: {100*prog[0]}%", end='\r')
             
             now = time.time()
             if now - start > timeout:
@@ -287,12 +284,12 @@ class ziLockin():
             self.output(output_id, output_on = True)
         
         #configure the sweep
-        sweeper.set('sweep/gridnode', 'sigouts/{}/amplitudes/{}'.format(output_id,output_ch))
+        sweeper.set('sweep/gridnode', f'sigouts/{output_id}/amplitudes/{output_ch}')
         sweeper.set('sweep/start', Ai/rng)
         sweeper.set('sweep/stop', Af/rng)
         sweeper.set('sweep/samplecount', samples)
         
-        print("Sweeping ", Ai/rng, Af/rng, samples, "(range ", rng, ")")
+        print(f"Sweeping {Ai/rng} {Af/rng} {samples} (range {rng})")
         print(sweeper.get('sweep/*'),
               sweeper.get('sweep/stop'),
               sweeper.get('sweep/samplecount'))
@@ -311,7 +308,7 @@ class ziLockin():
                 
                 if verbose:
                     prog = sweeper.progress()
-                    print("Sweeper progress: {:.0f}%".format(100*prog[0]), end='\r')
+                    print(f"Sweeper progress: {100*prog[0]}%", end='\r')
                 
                 now = time.time()
                 if now - start > timeout:
@@ -333,7 +330,7 @@ class ziLockin():
                 
                 if verbose:
                     prog = sweeper.progress()
-                    print("Sweeper progress: {:.0f}%".format(100*prog[0]), end='\r')
+                    print(f"Sweeper progress: {100*prog[0]}%", end='\r')
                 
                 now = time.time()
                 if now - start > timeout:

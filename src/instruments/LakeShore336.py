@@ -8,9 +8,7 @@ Created on Wed Mar 22 14:49:05 2023
 
 import numpy as np
 import scipy.interpolate as intp
-import pyvisa as visa
 from pyvisa.constants import Parity
-from time import sleep
 from .Instrument import Instrument
 
 class LakeShore336(Instrument):

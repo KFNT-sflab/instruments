@@ -13,12 +13,7 @@ class Keysight_DMM(Instrument):
         # print(self.dev.query('*IDN?'))
         
     def get_temperature(self,probe = 'FRTD',unit = 'C'):
-        """
-        For detailed info about probes check: 
-            https://www.testequipmentdepot.com/media/akeneo_connector/asset_files/3/4/34460a_34461a_34465a_34470a_manual_1577.pdf
-            
-        -----------------------------------------
-        
+        """       
         probe : string, which probe type to measure              
             "FRTD"  : 4 point PT100 thermometer                     \n      
             "RTD"   : 2 point  PT100 thermometer                    \n 

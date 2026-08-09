@@ -12,7 +12,7 @@ from .Instrument import Instrument
 class VNA(Instrument):
     """Some basic VNA functions. Most of the code stolen from Vaisakh's/Robyn's code."""
 
-    def __init__(self, rm, address="USB0::0x2A8D::0x5D01::MY54301840::INSTR"):
+    def __init__(self, rm, address):
         super().__init__(rm, address)
         print(self.idn())
         self.dev.timeout=20*60*1000

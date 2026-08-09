@@ -7,7 +7,7 @@ name = "sflab-instruments"
 version = "0.1.0"
 description = "Python drivers and control interfaces for laboratory measurement instruments"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "Superfluid Lab"}
@@ -27,8 +27,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Physics",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -42,6 +40,7 @@ dependencies = [
     "lmfit",
     "tqdm",
     "ilock",
+    "nidaqmx>=1.6.0",
 ]
 
 [project.optional-dependencies]
@@ -50,8 +49,8 @@ zhinst = ["zhinst"]
 all = ["nidaqmx", "zhinst"]
 
 [project.urls]
-Homepage = "https://github.com/emil-varga/instruments"
-Repository = "https://github.com/emil-varga/instruments"
+Homepage = "https://github.com/KFNT-sflab/instruments"
+Repository = "https://github.com/KFNT-sflab/instruments"
 
 [tool.setuptools.packages.find]
 where = ["src"]

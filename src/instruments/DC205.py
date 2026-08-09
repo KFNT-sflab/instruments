@@ -2,7 +2,7 @@
 """
 Created on Fri Oct 15 11:22:22 2021
 
-@author: ev
+@author: emil
 """
 
 from .Instrument import Instrument

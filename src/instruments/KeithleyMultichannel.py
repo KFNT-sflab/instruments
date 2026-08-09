@@ -5,8 +5,6 @@ Created on Mon Mar 27 09:39:52 2023
 
 @author: filip
 """
-import pyvisa as visa 
-import numpy as np
 from time import sleep
 
 from .Instrument import Instrument

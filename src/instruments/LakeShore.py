@@ -2,7 +2,7 @@
 """
 Created on Sun Oct 10 16:48:11 2021
 
-@author: ev
+@author: emil
 """
 
 import pyvisa as visa

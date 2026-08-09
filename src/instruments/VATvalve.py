@@ -6,7 +6,6 @@ Created on Wed Apr  5 11:16:17 2023
 """
 from .Instrument import Instrument
 import pyvisa as visa
-import time
 
 class VATvalve(Instrument):
     def __init__(self, rm, address, **kwargs):

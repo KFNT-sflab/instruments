@@ -6,8 +6,9 @@ Created on Thu Sep 17 12:56:38 2020
 """
 
 import numpy as np
-import time
 from .Instrument import Instrument
+
+codes = ['OFF','ON']
 
 class KS33210A(Instrument):
     """Keysight KS33210A DC to 10 MHz signal generator.
@@ -202,7 +203,6 @@ class KS33210A(Instrument):
         return codes[int(self.dev.query('OUTP:SYNC?'))]
     
     def get_AM_state(self):
-        codes = ['OFF','ON']
         return codes[int(self.dev.query('AM:STAT?'))]
         
     def get_AM_source(self):
@@ -215,23 +215,18 @@ class KS33210A(Instrument):
         return float(self.dev.query('AM:DEPT?'))
         
     def get_FM_state(self):
-        codes = ['OFF','ON']
         return codes[int(self.dev.query('FM:STAT?'))]
 
     def get_PM_state(self):
-        codes = ['OFF','ON']
         return codes[int(self.dev.query('PM:STAT?'))]
 
     def get_FSK_state(self):
-        codes = ['OFF','ON']
         return codes[int(self.dev.query('FSK:STAT?'))]
     
     def get_sweep_state(self):
-        codes = ['OFF','ON']
         return codes[int(self.dev.query('SWE:STAT?'))]
     
     def get_burst_state(self):
-        codes = ['OFF','ON']
         return codes[int(self.dev.query('BURS:STAT?'))]
     
     def get_trig_source(self):

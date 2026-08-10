@@ -12,7 +12,7 @@ from .Instrument import Instrument
 class Rigol_DG(Instrument):
     """Rigol DG series signal generator.   
     """
-    def __init__(self, rm, address, Z='inf', initialize_state=True,default_channel = 'CH1', **kwargs):
+    def __init__(self, rm, address, Z='inf', initialize_state=True, default_channel = 'CH1', **kwargs):
         super().__init__(rm, address, **kwargs)
 
         self.default_channel= default_channel
@@ -117,6 +117,7 @@ class Rigol_DG(Instrument):
                 self.dev.write(pref+"SWE:TRIG:SOUR EXT")
             else:
                 self.dev.write(pref+"SWE:TRIG:SOUR MAN")
+                self.dev.write(pref+"SWE:TRIG:TRIGO POS")
             self.dev.write(pref+"SWE:TRIG:SLOP POS")
             self.dev.write(pref+"SWE:STAT ON")
         else:

@@ -92,7 +92,7 @@ class SR844(Instrument):
         """
         if offset == 'auto':
             self.auto_offset(channel)
-            offset, _ = self.offset_expandq(channel)
+            offset, _ = self.get_offset_expand(channel)
         expands = {1: 0, 10: 1, 100: 2}
         command = "OEXP {}, {}, {}".format(channels[channel], offset, expands[expand])
         self.dev.write(command)
@@ -105,13 +105,13 @@ class SR844(Instrument):
             elif code == 1:
                 return 'HIZ'
             else:
-                raise    
+                raise ValueError("Invalid code.")   
         if imp == '50':
             self.dev.write('INPZ 0')
         elif imp.upper() == 'HIZ':
             self.dev.write('INPZ 1')
         else:
-            raise RuntimeError("Unknown coupling {}, only '50' (50 Ohm) or 'HIZ' (1 Mohm) allowed".format(imp))
+            raise RuntimeError(f"Unknown coupling {imp}, only '50' (50 Ohm) or 'HIZ' (1 Mohm) allowed")
             
     
     def wide_reserve(self, res=None):
@@ -125,8 +125,7 @@ class SR844(Instrument):
             try:
                 self.dev.write("WRSV {}".format(reserves[res.upper()]))
             except KeyError:
-                print("Only 'HIGH', 'NORMAL' and 'LOW'  reserves are available.")
-            raise
+                raise ValueError("Only 'HIGH', 'NORMAL' and 'LOW'  reserves are available.")
     
     def close_reserve(self, res=None):
         """Select or get close reserve, after the mixer and before analog to digital conversion.\n Unless something overloads, LOW is preferred. \n
@@ -139,8 +138,7 @@ class SR844(Instrument):
             try:
                 self.dev.write("CRSV {}".format(reserves[res.upper()]))
             except KeyError:
-                print("Only 'HIGH', 'NORMAL' and 'LOW'  reserves are available.")
-            raise
+                raise ValueError("Only 'HIGH', 'NORMAL' and 'LOW'  reserves are available.")
     
     def reference(self, ref=None):
         if ref=='external':
@@ -261,6 +259,16 @@ class SR844(Instrument):
         codey = int(self.dev.query('FPOP? 2'))
         return codesx[codex],codesy[codey]
     
+    def set_analog_output_settings(self, ch, what):
+        match what:
+            case 'XY':
+                code = 1
+            case 'display':
+                code = 0
+            case _:
+                raise ValueError(f"Invalid setting {what}")
+        self.dev.write(f'FPOP {ch} {code}')
+    
     def get_aux_input(self,input_number):
         if input_number in [1,2]:
             return float(self.dev.query('AUXI? {}'.format(input_number)))
@@ -298,13 +306,14 @@ class SR844(Instrument):
         disp1,disp2 = self.get_display()
         analog_outp1,analog_outp2 = self.get_analog_output_settings()
         aux_ratio = self.get_ratio_settings()
+        frequency = self.get_frequency()
         
         return {'Input impedance':impedance,'Wide reserve':wide_reserve,'Time constant (s)':timeconstant,
                 'Filter slope (dB)':slope,'Close reserve':close_reserve,'Sensitivity (V)':sens,
                 'Phase (deg)':phase,'Referece':reference,'Ref impedance':reference_impedance,
                 'Harmonic':harmonic,'CH1 expand':exp1,'CH2 expand':exp2,'X offset (percent)':offs1,
                 'Y offset (percent)':offs2,'CH1 display':disp1,'CH2 display':disp2,'Aux ratio settings':aux_ratio,
-                'CH1 analog output':analog_outp1,'CH2 analog output':analog_outp2}
+                'CH1 analog output':analog_outp1,'CH2 analog output':analog_outp2,'Frequency':frequency}
     
     def query_unlock(self):
         """

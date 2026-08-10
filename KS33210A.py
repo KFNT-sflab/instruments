@@ -61,13 +61,13 @@ class KS33210A(Instrument):
         else:
             return float(self.dev.query("FREQ?"))
     
-    def frequency_sweep(self, enable, fi=None, ff=None, t=None):
+    def frequency_sweep(self, enable, fi=None, ff=None, t=None, trig='IMM'):
         if enable:
             self.dev.write("FREQ:STAR {:.3f}".format(fi))
             self.dev.write("FREQ:STOP {:.3f}".format(ff))
             self.dev.write("SWE:SPAC LIN")
             self.dev.write("SWE:TIME {:.3f}".format(t))
-            self.dev.write("TRIG:SOUR EXT")
+            self.dev.write(f"TRIG:SOUR {trig}")
             self.dev.write("TRIG:SLOP POS")
             self.dev.write("SWE:STAT ON")
         else:

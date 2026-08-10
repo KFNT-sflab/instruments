@@ -10,6 +10,9 @@ from .Instrument import Instrument
 import numpy as np
 
 class Pico(Instrument):
+    code_to_accel = 2*9.81 / 32768
+    code_to_gyro = 250 / 32768  # degrees per second per count
+
     def __init__(self, rm, addr, **kwargs):
         super().__init__(rm, addr, **kwargs)
         
@@ -28,13 +31,13 @@ class Pico(Instrument):
         #read the accelerometer, which returns data as a string
         # ax ay az (space-separated floating point numbers)
         acc_str = self.dev.query(':READ:ACC?')
-        acc = np.array([float(c) for c in acc_str.split()])
+        acc = np.array([float(c)*self.code_to_accel for c in acc_str.split()])
         return acc
     
     def readGYR(self):
         # read the gyroscope, returns similar data as accelerometer
         gyr_str = self.dev.query(':READ:GYR?')
-        gyr = np.array([float(c) for c in gyr_str.split()])
+        gyr = np.array([float(c)*self.code_to_gyro for c in gyr_str.split()])
         return gyr
     
     def readT(self):

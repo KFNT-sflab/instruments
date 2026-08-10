@@ -160,95 +160,154 @@ class Rigol_DG(Instrument):
             self.dev.write(f"OUTP{channel} OFF")
             return False
     
-    '''
-TODO?
- 
-# =============================================================================
-#     def load_arb(self, waveform, name=None, channel = None):
-#         if len(waveform)>8192:
-#             raise ValueError("Maximum 8192 points allowed.")
-#         waveform_txt = ""
-#         for point in waveform:
-#             waveform_txt += ',{:.4f}'.format(point)
-#             # print(point)
-#         old_timeout = self.dev.timeout
-#         # print("Starting download.")
-#         self.dev.timeout = 60000 #60 s
-#         self.dev.write(':data volatile'+waveform_txt)
-#         self.dev.timeout = old_timeout
-#         # print("Download finished.")
-#         # time.sleep(2)
-#         if name is not None:
-#             # print("Copying")
-#             self.dev.write(':data:copy '+name)
-#             # time.sleep(2)
-# =============================================================================
-    
-
-    def select_arb(self, name, channel = None):
-        # print("Selecting arb")
-        self.dev.write(':func:user '+name)
-        self.dev.write(':func user')
-        # time.sleep(2)
-        
-    def burst(self, enable, N=1, source = 'bus',trig_delay = 0, channel = None):
-        """
-        Parameters
-        ----------
-        enable : Bool
-            enable/disable burst mode
-        N : Int, optional
-            Number of cycles. The default is 1.
-        source : Str, optional
-            trigger source, options:
-                bus - remote triggered \n
-                ext - triggered from rear pannel bnc\n
-            Default is 'bus', to trigger by bus use function 'gen.trig()'
-        trig_delay : Float, optional
-            set trigger delay in seconds, default is 0
-        channel : Str, optional
-            set gen output channel:
-                'CH1' - channel 1\n
-                'CH2' - channel 2\n
-            
-        Returns
-        -------
-        None.
-
-        """
-        channel=self.parse_channel(channel)
-        if enable:
-            self.dev.write(':burst:mode trig')
-            self.dev.write(f':trig:sour {source}')
-            self.dev.write(':trig:slop pos')
-            self.dev.write(f':trig:del {trig_delay}')
-            self.dev.write(':burst:ncyc {:d}'.format(N))
-            self.dev.write(':burst:state on')
-        else:
-            self.dev.write(':burst:state off')
-    '''
+    # '''
+    # TODO?
+    # # =============================================================================
+    # #     def load_arb(self, waveform, name=None, channel = None):
+    # #         if len(waveform)>8192:
+    # #             raise ValueError("Maximum 8192 points allowed.")
+    # #         waveform_txt = ""
+    # #         for point in waveform:
+    # #             waveform_txt += ',{:.4f}'.format(point)
+    # #             # print(point)
+    # #         old_timeout = self.dev.timeout
+    # #         # print("Starting download.")
+    # #         self.dev.timeout = 60000 #60 s
+    # #         self.dev.write(':data volatile'+waveform_txt)
+    # #         self.dev.timeout = old_timeout
+    # #         # print("Download finished.")
+    # #         # time.sleep(2)
+    # #         if name is not None:
+    # #             # print("Copying")
+    # #             self.dev.write(':data:copy '+name)
+    # #             # time.sleep(2)
+    # # =============================================================================
+    #     def select_arb(self, name, channel = None):
+    #         # print("Selecting arb")
+    #         self.dev.write(':func:user '+name)
+    #         self.dev.write(':func user')
+    #         # time.sleep(2)         
+    #     def burst(self, enable, N=1, source = 'bus',trig_delay = 0, channel = None):
+    #         """
+    #         Parameters
+    #         ----------
+    #         enable : Bool
+    #             enable/disable burst mode
+    #         N : Int, optional
+    #             Number of cycles. The default is 1.
+    #         source : Str, optional
+    #             trigger source, options:
+    #                 bus - remote triggered \n
+    #                 ext - triggered from rear pannel bnc\n
+    #             Default is 'bus', to trigger by bus use function 'gen.trig()'
+    #         trig_delay : Float, optional
+    #             set trigger delay in seconds, default is 0
+    #         channel : Str, optional
+    #             set gen output channel:
+    #                 'CH1' - channel 1\n
+    #                 'CH2' - channel 2\n     
+    #         Returns
+    #         -------
+    #         None.
+    #         """
+    #         channel=self.parse_channel(channel)
+    #         if enable:
+    #             self.dev.write(':burst:mode trig')
+    #             self.dev.write(f':trig:sour {source}')
+    #             self.dev.write(':trig:slop pos')
+    #             self.dev.write(f':trig:del {trig_delay}')
+    #             self.dev.write(':burst:ncyc {:d}'.format(N))
+    #             self.dev.write(':burst:state on')
+    #         else:
+    #             self.dev.write(':burst:state off')
+    #     '''
     
     def trig(self, channel = None):
         channel=self.parse_channel(channel)
-        self.dev.write(f'TRIG{channel }')
+        self.dev.write(f'TRIG{channel}')
     
     def trig_sweep(self, channel = None):
         channel=self.parse_channel(channel)
         self.dev.write(f':SOUR{channel}:SWE:TRIG')
         time.sleep(float(self.dev.query(f":SOUR{channel}:SWE:TIME?"))*1.2)
 
-    def get_settings(self):
-        """
-        TODO
-        
+    def output_load(self,Z=None, channel='CH1'):
+            try:
+                if Z==None:
+                    pass
+                elif Z == 'inf':
+                    self.dev.write('OUTP:LOAD {}'.format(Z))
+                elif (Z>=1 and Z<=10_000):
+                    self.dev.write('OUTP:LOAD {}'.format(Z))
+                else:
+                    RuntimeError('Invalid value of "Z" supplied: "{}"'.format(Z))
+            except:
+                raise RuntimeError('Invalid value of "Z" supplied: "{}"'.format(Z))
+                
+            load = float(self.dev.query('OUTP:LOAD?'))
+            return load if load<=10_000 else 'inf'
+            
+    def output_polarity(self,pol=None):
+        try:
+            if not pol==None:
+                self.dev.write('OUTP:POL {}'.format(pol))
+        except:
+            RuntimeError('Invalid value of "pol" supplied: "{}"'.format(pol))
+        return self.dev.query('OUTP:POL?').replace("\n", "")
 
-        Returns
-        -------
-        None.
-        """
+    def output_sync(self,sync=None):
+        codes = ['OFF','ON']
+        if sync in codes:
+            self.dev.write('OUTP:SYNC {}'.format(sync))
+        elif sync != None:
+            RuntimeError('Invalid value of "sync" supplied: "{}"'.format(sync))
+        return self.dev.query('OUTP:SYNC?').strip()#codes[int(self.dev.query('OUTP:SYNC?'))]
+
+    #copy pasted from AGILENT, test and find out what works
+
+    def get_AM_state(self):
+        codes = ['OFF','ON']
+        return self.dev.query('AM:STAT?').strip()#codes[int(self.dev.query('AM:STAT?'))]
         
-        return
-    
+    def get_AM_source(self):
+        return self.dev.query('AM:SOUR?').replace("\n", "")
+
+    def get_AM_function(self):
+        return self.dev.query('AM:INT:FUNC?').replace("\n", "")
+
+    def get_AM_depth(self):
+        return float(self.dev.query('AM:DEPT?'))
+        
+    def get_FM_state(self):
+        codes = ['OFF','ON']
+        return self.dev.query('FM:STAT?').strip()#codes[int(self.dev.query('FM:STAT?'))]
+
+    def get_PM_state(self):
+        codes = ['OFF','ON']
+        return self.dev.query('PM:STAT?').strip()#codes[int(self.dev.query('PM:STAT?'))]
+
+    def get_FSK_state(self):
+        codes = ['OFF','ON']
+        return self.dev.query('FSK:STAT?').strip()#codes[int(self.dev.query('FSK:STAT?'))]
+
+    def get_sweep_state(self):
+        codes = ['OFF','ON']
+        return self.dev.query('SWE:STAT?')#codes[int(self.dev.query('SWE:STAT?'))]
+
+    def get_burst_state(self):
+        codes = ['OFF','ON']
+        return self.dev.query('BURS:STAT?')#codes[int(self.dev.query('BURS:STAT?'))]
+
+    def get_trig_source(self):
+        return self.dev.query('trig:SOUR?').replace("\n", "")
+
+    def get_offset(self):
+        return self.dev.query('VOLT:OFFS?').replace("\n", "")
+
+    def get_unit(self):
+        return self.dev.query('VOLT:UNIT?').replace("\n", "")
+
+
     def reference_clock(self, source=None):
         if source is None:
             return self.dev.query(':SYST:ROSC:SOUR?')
@@ -256,8 +315,8 @@ TODO?
             self.dev.write(f':SYST:ROSC:SOUR {source}')
         else:
             raise KeyError('Invalid value of "source". Available options are "INT", "EXT" or None')
-    
-    
+
+
     def phase_coupling(self, state=None):
         if state is None:
             resp = self.dev.query(':COUP:PHAS?')
@@ -270,11 +329,50 @@ TODO?
             return False
         else:
             raise RuntimeError("Incorrect use of phase_coupling: state needs to be None, True or False")
-    
+
+
+            
+    def get_settings(self):
+        load = self.output_load()
+        pol = self.output_polarity()
+        sync = self.output_sync()
+        state = self.output()
+        AM_state = self.get_AM_state()
+        AM_source = self.get_AM_source()
+        AM_function = self.get_AM_function()
+        AM_depth  = self.get_AM_depth()
+        FM_state = self.get_FM_state()
+        # PM_state = self.get_PM_state()
+        # FSK_state = self.get_FSK_state()
+        sweep_state = self.get_sweep_state()
+        burst_state = self.get_burst_state()
+        trig_source = self.get_trig_source()
+        offset = self.get_offset()
+        unit = self.get_unit()
+        
+        settings = {'Load (Ohm)':load,
+                    'Polarity':pol,
+                    'Outp sync':sync,
+                    'Outp state':state,
+                    'AM state':AM_state,
+                    'FM state':FM_state,
+                    # 'PM state':PM_state,
+                    # 'FSK state':FSK_state,
+                    'Sweep state':sweep_state,
+                    'Burst state':burst_state,
+                    'Trig source':trig_source,
+                    'Outp unit':unit,
+                    'Offset (V)':offset
+                    }
+        if AM_state == 'ON':
+            settings['AM_source'] = AM_source
+            settings['AM_function'] = AM_function
+            settings['AM_depth'] = AM_depth
+            
+        return settings
+
     def align_phase(self):
         # self.dev.write(":SOUR1:PHAS:INIT")
         # self.dev.write(":SOUR2:PHAS:INIT")
         self.dev.write(":PHAS:INIT")
-        
-        
-    
+            

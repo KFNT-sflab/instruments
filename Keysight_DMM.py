@@ -45,6 +45,10 @@ class Keysight_DMM(Instrument):
         self.dev.write('TRIG:SOUR IMM')
         self.dev.write('INIT')
     
+    def fetch(self):
+        resp = self.dev.query("FETC?")
+        return float(resp)
+    
     def get_value(self):
         resp = self.dev.query('MEAS?')
         # print()

@@ -94,7 +94,7 @@ class SR830(Instrument):
     def set_offset_expand(self, channel, expand=1, offset='auto'):
         if offset == 'auto':
             self.auto_offset(channel)
-            offset, _ = self.offset_expandq(channel)
+            offset, _ = self.get_offset_expand(channel)
         expands = {1: 0, 10: 1, 100: 2}
         command = "OEXP {}, {}, {}".format(channels[channel], offset, expands[expand])
         self.dev.write(command)
@@ -544,6 +544,7 @@ class SR830(Instrument):
         aux_ratio1 = self.get_ratio_settings(1)
         aux_ratio2 = self.get_ratio_settings(2)
         amp = self.get_drive()
+        freq = self.get_frequency()
         
         return {'Signal input':signal_input,'Reserve':reserve,'Time constant (s)':timeconstant,
                 'Filter slope (dB)':slope,'Sensitivity (V)':sens,'Coupling':coupling,'Line filter':line_filter,
@@ -551,4 +552,5 @@ class SR830(Instrument):
                 'Harmonic':harmonic,'X expand':expX,'Y expand':expY, 'R expand':expR, 'X offset (percent)':offsX,
                 'Y offset (percent)':offsY,'R offset (percent)':offsR ,'CH1 display':disp1,'CH2 display':disp2,
                 'CH1 Aux ratio settings':aux_ratio1,'CH2 Aux ratio settings':aux_ratio2,
-                'CH1 analog output':analog_outp1,'CH2 analog output':analog_outp2,'Sine output amplitude (Vrms)': amp}
+                'CH1 analog output':analog_outp1,'CH2 analog output':analog_outp2,'Sine output amplitude (Vrms)': amp,
+                'Frequency': freq}

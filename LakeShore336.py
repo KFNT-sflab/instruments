@@ -29,10 +29,11 @@ class LakeShore336(Instrument):
         T = data[:,1]
         self.calibration[channel] = intp.interp1d(R, T, bounds_error=False, fill_value='extrapolate')
         
-    def set_manual_control(self, range=4, maxI=0.1):
+    def set_manual_control(self, range=3, maxI=0.1, resistance=50):
         self.dev.write("CMODE 1,3") # set to open loop control
         self.dev.write('CSET 1,,,1,') # set channel A to manual control
-        self.dev.write("CLIMIT 1,,,,1,5")
+        self.dev.write('CDISP 1,1,{resistance:.0f},1')
+        self.dev.write("CLIMIT 1,,,,5,5")
         self.dev.write(f"CLIMI {maxI:.3f}") # set max current limit
         self.dev.write(f'RANGE {range}') # heater range up-to 
     

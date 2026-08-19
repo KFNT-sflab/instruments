@@ -7,7 +7,10 @@ requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 authors = [
-    {name = "Superfluid Lab"}
+    {name = "Emil Varga", email="varga.emil@gmail.com"},
+    {name = "Marek Talíř"},
+    {name = "Balázs Szalai"},
+    {name = "Filip Novotný"}
 ]
 keywords = [
     "physics",
@@ -23,10 +26,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Physics",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3"
 ]
 dependencies = [
     "numpy",
@@ -48,6 +48,9 @@ build-backend = "hatchling.build"
 daq = ["nidaqmx"]
 zhinst = ["zhinst"]
 all = ["nidaqmx", "zhinst"]
+
+[project.scripts]
+sflab_instrument_server = "sflab_instruments.InstrumentServer:main"
 
 [project.urls]
 Homepage = "https://github.com/KFNT-sflab/instruments"

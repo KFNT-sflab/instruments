@@ -111,7 +111,7 @@ class VISAInstruments:
         self.instruments = {}
         self.rm = visa.ResourceManager()
     
-    def open_instrument(self, addr, conf=None):
+    def open_instrument(self, addr: str, conf: dict|None = None) -> None:
         if addr not in self.instruments:
             log.info(f"Opening new instrument at {addr}")
             self.instruments[addr] = RefCountedInstrument(self.rm.open_resource(addr))
@@ -122,13 +122,12 @@ class VISAInstruments:
         if conf is not None:
             self.configure_instrument(addr, conf)
     
-    def close_instrument(self, addr):
+    def close_instrument(self, addr: str) -> None:
         count = self.instruments[addr].refclose()
         if count == 0:
             self.instruments.pop(addr)
         
-    
-    def configure_instrument(self, addr: str, conf: dict) -> str:
+    def configure_instrument(self, addr: str, conf: dict) -> None:
         """
         Configure an already opened instruments
 
@@ -148,7 +147,7 @@ class VISAInstruments:
         for attr in conf:
             setattr(self.instruments[addr].dev, attr, conf[attr])
         
-    def write(self, addr: str, msg: str):
+    def write(self, addr: str, msg: str) -> None:
         with self.global_visa_lock:
             self.instruments[addr].dev.write(msg)
     

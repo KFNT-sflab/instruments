@@ -97,7 +97,7 @@ class InstrumentClient:
         if resp != "CONF OK":
            self.handle_error(resp)
     
-    def lock(self):
+    def lock(self, timeout=5000):
         #TODO
         pass
     def unlock(self):

@@ -8,8 +8,8 @@ Base class to represent instruments. Only opening and access control.
 """
 
 import pyvisa as visa
+import pyvisa.constants
 from .InstrumentClient import InstrumentClient
-import pickle
 from threading import Lock
 
 class Instrument:
@@ -19,7 +19,7 @@ class Instrument:
         self.access_mode = access_mode
         match access_mode:
             case 'shared':
-                self.dev = rm.open_resource(address, access_mode=visa.constants.AccessModes.shared_lock, **kwargs)
+                self.dev = rm.open_resource(address, access_mode=pyvisa.constants.AccessModes.shared_lock, **kwargs)
             case 'exclusive':
                 self.dev = rm.open_resource(address, **kwargs)
             case 'socket':

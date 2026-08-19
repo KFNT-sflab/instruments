@@ -4,67 +4,33 @@
 
 ## Installation
 
-### standard installation
-```bash
-pip install sflab-instruments
-```
-
 ### Installation from Source
 ```bash
-git clone https://github.com/emil-varga/instruments.git
+git clone https://github.com/KFNT-sflab/instruments
 cd instruments
 pip install .
 ```
 
-### Optional Hardware Extras
-For NI-DAQmx or Zurich Instruments support:
-```bash
-pip install sflab-instruments[daq]      # NI-DAQmx support
-pip install sflab-instruments[zhinst]   # Zurich Instruments support
-pip install sflab-instruments[all]      # All optional hardware packages
-```
+### Using the instrument server
+The project includes a simple instrument server that allows multiple programs to communicate with a single instruments concurrently, and also supports communication over the network. During installation, a script `sflab_instrument_server` is installed in the current environment, which can be used to start the server. Ths easiest way to use it is with `uv`, i.e. `uv run sflab_instrument_server`.
 
-## Quick Start
-
+All instrument classes inhereited from `Instrument` base class (that is, most of them) can then connect to this server by specifiying `access_mode="socket"` and then communicate as normal. An example for the `SR830` lock-in amplifier:
 ```python
-from instruments import SR830, Keithley2200
+from sflab_instruments.SR830 import SR830
 
-# Connect to Stanford Research SR830 Lock-in Amplifier
-lockin = SR830("GPIB0::24::INSTR")
-print("Frequency:", lockin.frequency)
+# if the instrument server is running on localhost
+lockin = SR830(None, 'GPIB0::1::INSTR', access_mode="socket")
+# or if the instrument server is running on a remote
+lockin = SR830(None, 'GPIB0::1::INSTR', access_mode="socket", remote_addr="<remote IP address>", port=<port number>)
 
-# Connect to Keithley Power Supply
-psu = Keithley2200("USB0::0x05E6::0x2200::...::INSTR")
-psu.voltage = 5.0
-psu.output_enabled = True
+x, y = lockin.get_xy()
+# or for general queries
+resp = lockin.dev.query("*IDN?")
 ```
 
-## Supported Devices
+When the server is started it prints the port number on the output and also saves it in `instrument_server_port.txt` stored in the location returned by `tempfile.gettempdir()`, which is searched if `port` is not specified
 
-- **Lock-in Amplifiers**: SR830, SR844, ziLockin (Zurich Instruments), DAQ_Lockin
-- **Signal Generators & Function Generators**: DS345, KS33210A, Rigol_DG, SG384
-- **Power Supplies & Voltage Sources**: DC205, Keithley2200, KeithleyMultichannel
-- **Vector Network Analyzers**: LiteVNA, vna
-- **Multimeters & Sensors**: Keysight DMM, LakeShore, LakeShore336, MKS670B, Mensor, PR4000B, Pico, VATvalve
-
-## Building and Uploading to PyPI
-
-To build and publish to PyPI:
-
-1. Install build tools:
-   ```bash
-   pip install build twine
-   ```
-
-2. Build source distribution and wheel:
-   ```bash
-   python -m build
-   ```
-
-3. Upload to PyPI:
-   ```bash
-   python -m twine upload dist/*
-   ```
+There is no password, or any security to speak of. So do not use this on open networks.
 
 ## License
 

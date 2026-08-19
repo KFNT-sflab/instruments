@@ -1,6 +1,6 @@
 [project]
 name = "sflab-instruments"
-version = "0.1.0"
+version = "0.0.1"
 description = "Python drivers and control interfaces for laboratory measurement instruments"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -14,16 +14,13 @@ authors = [
 ]
 keywords = [
     "physics",
-    "laboratory",
     "instruments",
     "pyvisa",
-    "lockin",
-    "vna",
     "data-acquisition",
     "measurement"
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Physics",
     "Programming Language :: Python :: 3"

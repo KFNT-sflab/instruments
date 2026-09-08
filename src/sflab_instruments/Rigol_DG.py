@@ -9,122 +9,122 @@ import numpy as np
 import time
 from .Instrument import Instrument
 
+
 class Rigol_DG(Instrument):
-    """Rigol DG series signal generator.   
-    """
-    def __init__(self, rm, address, Z='inf', initialize_state=True, default_channel = 'CH1', **kwargs):
+    """Rigol DG series signal generator."""
+
+    def __init__(self, rm, address, Z="inf", initialize_state=True, default_channel="CH1", **kwargs):
         super().__init__(rm, address, **kwargs)
 
-        self.default_channel= default_channel
+        self.default_channel = default_channel
         if initialize_state:
-            self.dev.write("FUNC SIN") # set the function to sine
+            self.dev.write("FUNC SIN")  # set the function to sine
             self.dev.write("VOLT:UNIT VPP")
-            if Z == 'inf':
+            if Z == "inf":
                 self.dev.write("OUTP:LOAD INF")
             else:
                 self.dev.write("OUTP:LOAD 50")
         self.output_amplitude = np.nan
         self.output_amplitude = float(self.amplitude())
         self.output_state = self.output()
-        
-        
-        
-    def parse_channel(self,value):
+
+    def parse_channel(self, value):
         if value == None:
             value = self.default_channel
-        if value == 'CH1' or value == 'CH2':
+        if value == "CH1" or value == "CH2":
             parsed = value[-1]
         else:
-            raise(ValueError('Only "CH1" or "CH2" values are accepted!'))
+            raise (ValueError('Only "CH1" or "CH2" values are accepted!'))
         return parsed
-        
-    def function(self, function, channel = None):
-        self.dev.write(":SOUR{}:FUNC {}".format(channel,function.upper()))
-    
+
+    def function(self, function, channel=None):
+        self.dev.write(":SOUR{}:FUNC {}".format(channel, function.upper()))
+
     def phase(self, phase, channel=None):
         _ch = self.default_channel if channel is None else channel
         _chn = self.parse_channel(_ch)
-        self.dev.write(f':SOUR{_chn}:PHAS {phase%360:.4f}')
+        self.dev.write(f":SOUR{_chn}:PHAS {phase % 360:.4f}")
 
-    def amplitude(self, value=None, unit=None, channel = None):
+    def amplitude(self, value=None, unit=None, channel=None):
         """Availale units are VPP, VRMS and DBM
-           Available channels are CH1 and CH2
+        Available channels are CH1 and CH2
         """
-        
+
         channel = self.parse_channel(channel)
-        
+
         if unit is not None:
-            self.dev.write(f':SOUR{channel}:VOLT:UNIT {unit}')
-        
+            self.dev.write(f":SOUR{channel}:VOLT:UNIT {unit}")
+
         if value is not None:
             self.output_amplitude = value
             # if value < 0.0001:
             #     self.output_amplitude = 0
             #     self.output(False)
             # else:
-            self.dev.write(":SOUR{}:VOLT {:.4f}".format(channel,value))
+            self.dev.write(":SOUR{}:VOLT {:.4f}".format(channel, value))
 
         else:
             if self.output_amplitude < 0.01:
                 return 0
             return float(self.dev.query(f":SOUR{channel}:VOLT?"))
-    
-    def offset(self, value=None, unit=None, channel = None):
+
+    def offset(self, value=None, unit=None, channel=None):
         """
         Available channels are CH1 and CH2
         """
-        
+
         channel = self.parse_channel(channel)
-        
+
         if unit is not None:
-            self.dev.write(f':SOUR{channel}:VOLT:UNIT {unit}')
-        
+            self.dev.write(f":SOUR{channel}:VOLT:UNIT {unit}")
+
         if value is not None:
-            self.dev.write(":SOUR{}:VOLT:LEV:OFFS {:.4f}".format(channel,value))
+            self.dev.write(":SOUR{}:VOLT:LEV:OFFS {:.4f}".format(channel, value))
 
         else:
             if self.output_amplitude < 0.01:
                 return 0
             return float(self.dev.query(f":SOUR{channel}:VOLT?"))
-    
-    def lolevel(self, value, channel = None):
+
+    def lolevel(self, value, channel=None):
         channel = self.parse_channel(channel)
-        self.dev.write(":SOUR{}VOLT:LOW {:.4f}".format(channel,value))
-    def hilevel(self, value, channel = None):
+        self.dev.write(":SOUR{}VOLT:LOW {:.4f}".format(channel, value))
+
+    def hilevel(self, value, channel=None):
         channel = self.parse_channel(channel)
-        self.dev.write(":SOUR{}VOLT:HIGH {:.4f}".format(channel,value))
-    
-    def frequency(self, freq=None, channel = None):
-        
+        self.dev.write(":SOUR{}VOLT:HIGH {:.4f}".format(channel, value))
+
+    def frequency(self, freq=None, channel=None):
+
         channel = self.parse_channel(channel)
-        
+
         if freq is not None:
-            self.dev.write(":SOUR{}:FREQ {:.9f}".format(channel,freq))
+            self.dev.write(":SOUR{}:FREQ {:.9f}".format(channel, freq))
             self.align_phase()
         else:
             return self.dev.query(f":SOUR{channel}:FREQ?")
-    
-    def frequency_sweep(self, enable, fi=None, ff=None, t=None, channel = None, extTrig=False):
+
+    def frequency_sweep(self, enable, fi=None, ff=None, t=None, channel=None, extTrig=False):
         channel = self.parse_channel(channel)
-        pref = f':SOUR{channel}:'
+        pref = f":SOUR{channel}:"
         if enable:
-            self.dev.write(pref+"FREQ:STAR {:.3f}".format(fi))
-            self.dev.write(pref+"FREQ:STOP {:.3f}".format(ff))
-            self.dev.write(pref+"SWE:SPAC LIN")
-            self.dev.write(pref+"SWE:TIME {:.3f}".format(t))
+            self.dev.write(pref + "FREQ:STAR {:.3f}".format(fi))
+            self.dev.write(pref + "FREQ:STOP {:.3f}".format(ff))
+            self.dev.write(pref + "SWE:SPAC LIN")
+            self.dev.write(pref + "SWE:TIME {:.3f}".format(t))
             if extTrig:
-                print(pref+"TRIG:SOUR EXT")
-                self.dev.write(pref+"SWE:TRIG:SOUR EXT")
+                print(pref + "TRIG:SOUR EXT")
+                self.dev.write(pref + "SWE:TRIG:SOUR EXT")
             else:
-                self.dev.write(pref+"SWE:TRIG:SOUR MAN")
-                self.dev.write(pref+"SWE:TRIG:TRIGO POS")
-            self.dev.write(pref+"SWE:TRIG:SLOP POS")
-            self.dev.write(pref+"SWE:STAT ON")
+                self.dev.write(pref + "SWE:TRIG:SOUR MAN")
+                self.dev.write(pref + "SWE:TRIG:TRIGO POS")
+            self.dev.write(pref + "SWE:TRIG:SLOP POS")
+            self.dev.write(pref + "SWE:STAT ON")
         else:
-            self.dev.write(pref+"TRIG:SOUR IMM")
-            self.dev.write(pref+"SWE:STAT OFF")
-        
-    def amplitude_modulation(self, enable, depth, channel = None):
+            self.dev.write(pref + "TRIG:SOUR IMM")
+            self.dev.write(pref + "SWE:STAT OFF")
+
+    def amplitude_modulation(self, enable, depth, channel=None):
         """Specify the modulation depth in percent in the range 0 -- 120"""
         if enable:
             self.dev.write("AM:STAT ON")
@@ -132,8 +132,8 @@ class Rigol_DG(Instrument):
             self.dev.write("AM:DEPTH {:.4f}".format(depth))
         else:
             self.dev.write("AM:STAT OFF")
-        
-    def amplitude_modulation_int(self, enable, depth, channel = None):
+
+    def amplitude_modulation_int(self, enable, depth, channel=None):
         """Specify the modulation depth in percent in the range 0 -- 120"""
         if enable:
             self.dev.write("AM:STAT ON")
@@ -141,25 +141,24 @@ class Rigol_DG(Instrument):
             self.dev.write("AM:DEPTH {:.4f}".format(depth))
         else:
             self.dev.write("AM:STAT OFF")
-            
-    def modulation_frequency (self, freq, channel = None):
+
+    def modulation_frequency(self, freq, channel=None):
         self.dev.write("AM:INT:FREQ {:.9f}".format(freq))
-       
-    
-    def output(self, state=None, channel = None):
+
+    def output(self, state=None, channel=None):
         channel = self.parse_channel(channel)
         if state is None:
-            resp = self.dev.query(f'OUTP{channel}?')
+            resp = self.dev.query(f"OUTP{channel}?")
             return bool(resp)
         if self.output_amplitude >= 0.0:
             toggled = self.output_state ^ state
-            self.dev.write("OUTP{} {}".format(channel,'ON' if state else 'OFF'))
+            self.dev.write("OUTP{} {}".format(channel, "ON" if state else "OFF"))
             self.output_state = state
             return toggled
         else:
             self.dev.write(f"OUTP{channel} OFF")
             return False
-    
+
     # '''
     # TODO?
     # # =============================================================================
@@ -186,7 +185,7 @@ class Rigol_DG(Instrument):
     #         # print("Selecting arb")
     #         self.dev.write(':func:user '+name)
     #         self.dev.write(':func user')
-    #         # time.sleep(2)         
+    #         # time.sleep(2)
     #     def burst(self, enable, N=1, source = 'bus',trig_delay = 0, channel = None):
     #         """
     #         Parameters
@@ -205,7 +204,7 @@ class Rigol_DG(Instrument):
     #         channel : Str, optional
     #             set gen output channel:
     #                 'CH1' - channel 1\n
-    #                 'CH2' - channel 2\n     
+    #                 'CH2' - channel 2\n
     #         Returns
     #         -------
     #         None.
@@ -221,106 +220,104 @@ class Rigol_DG(Instrument):
     #         else:
     #             self.dev.write(':burst:state off')
     #     '''
-    
-    def trig(self, channel = None):
-        channel=self.parse_channel(channel)
-        self.dev.write(f'TRIG{channel}')
-    
-    def trig_sweep(self, channel = None):
-        channel=self.parse_channel(channel)
-        self.dev.write(f':SOUR{channel}:SWE:TRIG')
-        time.sleep(float(self.dev.query(f":SOUR{channel}:SWE:TIME?"))*1.2)
 
-    def output_load(self,Z=None, channel='CH1'):
-            try:
-                if Z==None:
-                    pass
-                elif Z == 'inf':
-                    self.dev.write('OUTP:LOAD {}'.format(Z))
-                elif (Z>=1 and Z<=10_000):
-                    self.dev.write('OUTP:LOAD {}'.format(Z))
-                else:
-                    RuntimeError('Invalid value of "Z" supplied: "{}"'.format(Z))
-            except:
-                raise RuntimeError('Invalid value of "Z" supplied: "{}"'.format(Z))
-                
-            load = float(self.dev.query('OUTP:LOAD?'))
-            return load if load<=10_000 else 'inf'
-            
-    def output_polarity(self,pol=None):
+    def trig(self, channel=None):
+        channel = self.parse_channel(channel)
+        self.dev.write(f"TRIG{channel}")
+
+    def trig_sweep(self, channel=None):
+        channel = self.parse_channel(channel)
+        self.dev.write(f":SOUR{channel}:SWE:TRIG")
+        time.sleep(float(self.dev.query(f":SOUR{channel}:SWE:TIME?")) * 1.2)
+
+    def output_load(self, Z=None, channel="CH1"):
         try:
-            if not pol==None:
-                self.dev.write('OUTP:POL {}'.format(pol))
+            if Z == None:
+                pass
+            elif Z == "inf":
+                self.dev.write("OUTP:LOAD {}".format(Z))
+            elif Z >= 1 and Z <= 10_000:
+                self.dev.write("OUTP:LOAD {}".format(Z))
+            else:
+                RuntimeError('Invalid value of "Z" supplied: "{}"'.format(Z))
+        except:
+            raise RuntimeError('Invalid value of "Z" supplied: "{}"'.format(Z))
+
+        load = float(self.dev.query("OUTP:LOAD?"))
+        return load if load <= 10_000 else "inf"
+
+    def output_polarity(self, pol=None):
+        try:
+            if not pol == None:
+                self.dev.write("OUTP:POL {}".format(pol))
         except:
             RuntimeError('Invalid value of "pol" supplied: "{}"'.format(pol))
-        return self.dev.query('OUTP:POL?').replace("\n", "")
+        return self.dev.query("OUTP:POL?").replace("\n", "")
 
-    def output_sync(self,sync=None):
-        codes = ['OFF','ON']
+    def output_sync(self, sync=None):
+        codes = ["OFF", "ON"]
         if sync in codes:
-            self.dev.write('OUTP:SYNC {}'.format(sync))
+            self.dev.write("OUTP:SYNC {}".format(sync))
         elif sync != None:
             RuntimeError('Invalid value of "sync" supplied: "{}"'.format(sync))
-        return self.dev.query('OUTP:SYNC?').strip()#codes[int(self.dev.query('OUTP:SYNC?'))]
+        return self.dev.query("OUTP:SYNC?").strip()  # codes[int(self.dev.query('OUTP:SYNC?'))]
 
-    #copy pasted from AGILENT, test and find out what works
+    # copy pasted from AGILENT, test and find out what works
 
     def get_AM_state(self):
-        codes = ['OFF','ON']
-        return self.dev.query('AM:STAT?').strip()#codes[int(self.dev.query('AM:STAT?'))]
-        
+        codes = ["OFF", "ON"]
+        return self.dev.query("AM:STAT?").strip()  # codes[int(self.dev.query('AM:STAT?'))]
+
     def get_AM_source(self):
-        return self.dev.query('AM:SOUR?').replace("\n", "")
+        return self.dev.query("AM:SOUR?").replace("\n", "")
 
     def get_AM_function(self):
-        return self.dev.query('AM:INT:FUNC?').replace("\n", "")
+        return self.dev.query("AM:INT:FUNC?").replace("\n", "")
 
     def get_AM_depth(self):
-        return float(self.dev.query('AM:DEPT?'))
-        
+        return float(self.dev.query("AM:DEPT?"))
+
     def get_FM_state(self):
-        codes = ['OFF','ON']
-        return self.dev.query('FM:STAT?').strip()#codes[int(self.dev.query('FM:STAT?'))]
+        codes = ["OFF", "ON"]
+        return self.dev.query("FM:STAT?").strip()  # codes[int(self.dev.query('FM:STAT?'))]
 
     def get_PM_state(self):
-        codes = ['OFF','ON']
-        return self.dev.query('PM:STAT?').strip()#codes[int(self.dev.query('PM:STAT?'))]
+        codes = ["OFF", "ON"]
+        return self.dev.query("PM:STAT?").strip()  # codes[int(self.dev.query('PM:STAT?'))]
 
     def get_FSK_state(self):
-        codes = ['OFF','ON']
-        return self.dev.query('FSK:STAT?').strip()#codes[int(self.dev.query('FSK:STAT?'))]
+        codes = ["OFF", "ON"]
+        return self.dev.query("FSK:STAT?").strip()  # codes[int(self.dev.query('FSK:STAT?'))]
 
     def get_sweep_state(self):
-        codes = ['OFF','ON']
-        return self.dev.query('SWE:STAT?')#codes[int(self.dev.query('SWE:STAT?'))]
+        codes = ["OFF", "ON"]
+        return self.dev.query("SWE:STAT?")  # codes[int(self.dev.query('SWE:STAT?'))]
 
     def get_burst_state(self):
-        codes = ['OFF','ON']
-        return self.dev.query('BURS:STAT?')#codes[int(self.dev.query('BURS:STAT?'))]
+        codes = ["OFF", "ON"]
+        return self.dev.query("BURS:STAT?")  # codes[int(self.dev.query('BURS:STAT?'))]
 
     def get_trig_source(self):
-        return self.dev.query('trig:SOUR?').replace("\n", "")
+        return self.dev.query("trig:SOUR?").replace("\n", "")
 
     def get_offset(self):
-        return self.dev.query('VOLT:OFFS?').replace("\n", "")
+        return self.dev.query("VOLT:OFFS?").replace("\n", "")
 
     def get_unit(self):
-        return self.dev.query('VOLT:UNIT?').replace("\n", "")
-
+        return self.dev.query("VOLT:UNIT?").replace("\n", "")
 
     def reference_clock(self, source=None):
         if source is None:
-            return self.dev.query(':SYST:ROSC:SOUR?')
-        elif source in ['INT', 'EXT']:
-            self.dev.write(f':SYST:ROSC:SOUR {source}')
+            return self.dev.query(":SYST:ROSC:SOUR?")
+        elif source in ["INT", "EXT"]:
+            self.dev.write(f":SYST:ROSC:SOUR {source}")
         else:
             raise KeyError('Invalid value of "source". Available options are "INT", "EXT" or None')
 
-
     def phase_coupling(self, state=None):
         if state is None:
-            resp = self.dev.query(':COUP:PHAS?')
-            return True if resp == 'ON\n' else False
+            resp = self.dev.query(":COUP:PHAS?")
+            return True if resp == "ON\n" else False
         elif state == True:
             self.dev.write(f":COUP:PHAS ON")
             return True
@@ -330,8 +327,6 @@ class Rigol_DG(Instrument):
         else:
             raise RuntimeError("Incorrect use of phase_coupling: state needs to be None, True or False")
 
-
-            
     def get_settings(self):
         load = self.output_load()
         pol = self.output_polarity()
@@ -340,7 +335,7 @@ class Rigol_DG(Instrument):
         AM_state = self.get_AM_state()
         AM_source = self.get_AM_source()
         AM_function = self.get_AM_function()
-        AM_depth  = self.get_AM_depth()
+        AM_depth = self.get_AM_depth()
         FM_state = self.get_FM_state()
         # PM_state = self.get_PM_state()
         # FSK_state = self.get_FSK_state()
@@ -349,30 +344,30 @@ class Rigol_DG(Instrument):
         trig_source = self.get_trig_source()
         offset = self.get_offset()
         unit = self.get_unit()
-        
-        settings = {'Load (Ohm)':load,
-                    'Polarity':pol,
-                    'Outp sync':sync,
-                    'Outp state':state,
-                    'AM state':AM_state,
-                    'FM state':FM_state,
-                    # 'PM state':PM_state,
-                    # 'FSK state':FSK_state,
-                    'Sweep state':sweep_state,
-                    'Burst state':burst_state,
-                    'Trig source':trig_source,
-                    'Outp unit':unit,
-                    'Offset (V)':offset
-                    }
-        if AM_state == 'ON':
-            settings['AM_source'] = AM_source
-            settings['AM_function'] = AM_function
-            settings['AM_depth'] = AM_depth
-            
+
+        settings = {
+            "Load (Ohm)": load,
+            "Polarity": pol,
+            "Outp sync": sync,
+            "Outp state": state,
+            "AM state": AM_state,
+            "FM state": FM_state,
+            # 'PM state':PM_state,
+            # 'FSK state':FSK_state,
+            "Sweep state": sweep_state,
+            "Burst state": burst_state,
+            "Trig source": trig_source,
+            "Outp unit": unit,
+            "Offset (V)": offset,
+        }
+        if AM_state == "ON":
+            settings["AM_source"] = AM_source
+            settings["AM_function"] = AM_function
+            settings["AM_depth"] = AM_depth
+
         return settings
 
     def align_phase(self):
         # self.dev.write(":SOUR1:PHAS:INIT")
         # self.dev.write(":SOUR2:PHAS:INIT")
         self.dev.write(":PHAS:INIT")
-            

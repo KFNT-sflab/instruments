@@ -10,7 +10,7 @@ import time
 from .Instrument import Instrument
 
 class Rigol_DG(Instrument):
-    """Rigol DG series signal generator.   
+    """Rigol DG4000 series signal generator.   
     """
     def __init__(self, rm, address, Z='inf', initialize_state=True, default_channel = 'CH1', **kwargs):
         super().__init__(rm, address, **kwargs)
@@ -232,83 +232,99 @@ class Rigol_DG(Instrument):
         time.sleep(float(self.dev.query(f":SOUR{channel}:SWE:TIME?"))*1.2)
 
     def output_load(self,Z=None, channel='CH1'):
+            channel=self.parse_channel(channel)
             try:
                 if Z==None:
                     pass
                 elif Z == 'inf':
-                    self.dev.write('OUTP:LOAD {}'.format(Z))
+                    self.dev.write('OUTP{}:LOAD {}'.format(channel, Z))
                 elif (Z>=1 and Z<=10_000):
-                    self.dev.write('OUTP:LOAD {}'.format(Z))
+                    self.dev.write('OUTP{}:LOAD {}'.format(channel, Z))
                 else:
                     RuntimeError('Invalid value of "Z" supplied: "{}"'.format(Z))
             except:
                 raise RuntimeError('Invalid value of "Z" supplied: "{}"'.format(Z))
                 
-            load = float(self.dev.query('OUTP:LOAD?'))
+            load = float(self.dev.query(f'OUTP{channel}:LOAD?'))
             return load if load<=10_000 else 'inf'
             
-    def output_polarity(self,pol=None):
+    def output_polarity(self, pol=None, channel='CH1'):
+        channel=self.parse_channel(channel)
         try:
             if not pol==None:
-                self.dev.write('OUTP:POL {}'.format(pol))
+                self.dev.write('OUTP{}:POL {}'.format(channel, pol))
         except:
             RuntimeError('Invalid value of "pol" supplied: "{}"'.format(pol))
-        return self.dev.query('OUTP:POL?').replace("\n", "")
+        return self.dev.query(f'OUTP{channel}:POL?').replace("\n", "")
 
-    def output_sync(self,sync=None):
+    def output_sync(self, sync=None, channel='CH1'):
         codes = ['OFF','ON']
         if sync in codes:
-            self.dev.write('OUTP:SYNC {}'.format(sync))
+            self.dev.write('OUTP{}:SYNC {}'.format(channel, sync))
         elif sync != None:
             RuntimeError('Invalid value of "sync" supplied: "{}"'.format(sync))
-        return self.dev.query('OUTP:SYNC?').strip()#codes[int(self.dev.query('OUTP:SYNC?'))]
+        return self.dev.query(f'OUTP{channel}:SYNC?').strip()#codes[int(self.dev.query('OUTP:SYNC?'))]
 
     #copy pasted from AGILENT, test and find out what works
 
-    def get_AM_state(self):
-        codes = ['OFF','ON']
-        return self.dev.query('AM:STAT?').strip()#codes[int(self.dev.query('AM:STAT?'))]
+    def get_AM_state(self, channel='CH1'):
+        channel=self.parse_channel(channel)
+        if (self.dev.query(f'SOUR{channel}:MOD:STAT?').strip()=='ON') and (self.dev.query(f'SOUR{channel}:MOD:TYP?').strip()=='AM'):
+            return 'ON'
+        else:
+            return 'OFF'
         
-    def get_AM_source(self):
-        return self.dev.query('AM:SOUR?').replace("\n", "")
+    def get_AM_source(self, channel='CH1'):
+        channel=self.parse_channel(channel)
+        return self.dev.query(f'SOUR{channel}:MOD:AM:SOUR?').strip()
 
-    def get_AM_function(self):
-        return self.dev.query('AM:INT:FUNC?').replace("\n", "")
+    def get_AM_function(self, channel='CH1'):
+        channel=self.parse_channel(channel)
+        return self.dev.query(f'SOUR{channel}:MOD:AM:INT:FUN?').strip()
 
-    def get_AM_depth(self):
-        return float(self.dev.query('AM:DEPT?'))
+    def get_AM_depth(self, channel='CH1'):
+        channel=self.parse_channel(channel)
+        return float(self.dev.query(f'SOUR{channel}:MOD:AM:DEPT?').strip())
         
-    def get_FM_state(self):
-        codes = ['OFF','ON']
-        return self.dev.query('FM:STAT?').strip()#codes[int(self.dev.query('FM:STAT?'))]
+    def get_FM_state(self, channel='CH1'):
+        channel=self.parse_channel(channel)
+        if (self.dev.query(f'SOUR{channel}:MOD:STAT?').strip()=='ON') and (self.dev.query(f'SOUR{channel}:MOD:TYP?').strip()=='FM'):
+            return 'ON'
+        else:
+            return 'OFF'
+    # def get_PM_state(self, channel='CH1'):
+    #     channel=self.parse_channel(channel)
+    #     codes = ['OFF','ON']
+    #     return self.dev.query('PM:STAT?').strip()#codes[int(self.dev.query('PM:STAT?'))]
 
-    def get_PM_state(self):
-        codes = ['OFF','ON']
-        return self.dev.query('PM:STAT?').strip()#codes[int(self.dev.query('PM:STAT?'))]
+    # def get_FSK_state(self, channel='CH1'):
+    #     channel=self.parse_channel(channel)
+    #     codes = ['OFF','ON']
+    #     return self.dev.query('FSK:STAT?').strip()#codes[int(self.dev.query('FSK:STAT?'))]
 
-    def get_FSK_state(self):
-        codes = ['OFF','ON']
-        return self.dev.query('FSK:STAT?').strip()#codes[int(self.dev.query('FSK:STAT?'))]
-
-    def get_sweep_state(self):
-        codes = ['OFF','ON']
+    def get_sweep_state(self, channel='CH1'):
+        channel=self.parse_channel(channel)
         return self.dev.query('SWE:STAT?')#codes[int(self.dev.query('SWE:STAT?'))]
 
-    def get_burst_state(self):
-        codes = ['OFF','ON']
+    def get_burst_state(self, channel='CH1'):
+        channel=self.parse_channel(channel)
         return self.dev.query('BURS:STAT?')#codes[int(self.dev.query('BURS:STAT?'))]
 
-    def get_trig_source(self):
+    def get_trig_source(self, channel='CH1'):
+        channel=self.parse_channel(channel)
         return self.dev.query('trig:SOUR?').replace("\n", "")
 
-    def get_offset(self):
+    def get_offset(self, channel='CH1'):
+        channel=self.parse_channel(channel)
         return self.dev.query('VOLT:OFFS?').replace("\n", "")
 
-    def get_unit(self):
+    def get_unit(self, channel='CH1'):
+        channel=self.parse_channel(channel)
         return self.dev.query('VOLT:UNIT?').replace("\n", "")
 
 
-    def reference_clock(self, source=None):
+    def reference_clock(self, source=None, channel='CH1'):
+        channel=self.parse_channel(channel)
         if source is None:
             return self.dev.query(':SYST:ROSC:SOUR?')
         elif source in ['INT', 'EXT']:
@@ -317,7 +333,8 @@ class Rigol_DG(Instrument):
             raise KeyError('Invalid value of "source". Available options are "INT", "EXT" or None')
 
 
-    def phase_coupling(self, state=None):
+    def phase_coupling(self, state=None, channel='CH1'):
+        channel=self.parse_channel(channel)
         if state is None:
             resp = self.dev.query(':COUP:PHAS?')
             return True if resp == 'ON\n' else False

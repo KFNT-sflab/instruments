@@ -314,6 +314,7 @@ class LibreVNA(Instrument):
     def close(self, stop_server=True):
         """Close the socket (and stop the GUI if we started it)."""
         try:
+            self.halt()
             self.dev.close()
         finally:
             if stop_server:

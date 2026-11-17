@@ -35,17 +35,25 @@ class KS33210A(Instrument):
             self.dev.write("FUNC {}".format(function.upper()))
         return self.dev.query("FUNC?")
 
+    def get_unit(self):
+        return self.dev.write("VOLT:UNIT?").strip()
+
     def amplitude(self, value=None, unit=None):
         """Availale units are VPP, VRMS and DBM"""
         if unit is not None:
             self.dev.write("VOLT:UNIT {}".format(unit))
-        elif value is not None:
-            self.output_amplitude = value
-            if value < 0.01:
-                self.output_amplitude = 0
-                self.output(False)
-            else:
-                self.dev.write("VOLT {:.4f}".format(value))
+        if value is not None:
+            self.dev.write("VOLT {:.4f}".format(value))
+            val_set = self.amplitude()
+            self.output_amplitude = val_set
+            if val_set != value:
+                raise RuntimeError(f'Was unable to set value {value}, set it to {val_set} instead')
+            # if value < 0.01:
+            #     self.output_amplitude = 0
+            #     self.output(False)
+            # else:
+            #     self.dev.write("VOLT {:.4f}".format(value))
+            #     self.output_amplitude = value
         else:
             return float(self.dev.query("VOLT?"))
 
